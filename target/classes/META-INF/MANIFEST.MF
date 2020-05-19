@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: OrderMicroservice
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: ASUS
+Implementation-Vendor-Id: com.doit
+Build-Jdk: 1.8.0_241
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/OrderMicroservice
+Created-By: Maven Integration for Eclipse
+
