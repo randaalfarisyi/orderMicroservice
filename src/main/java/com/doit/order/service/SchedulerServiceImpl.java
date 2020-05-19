@@ -35,7 +35,7 @@ public class SchedulerServiceImpl implements SchedulerService {
 			schedulerNew.setTime(scheduler.getTime());
 			
 			LocalDateTime now = LocalDateTime.now();
-			Date date = Date.from(now.atZone(ZoneId.systemDefault()).toInstant()); 
+			Date date = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
 			schedulerNew.setUpdatedTime(date);
 			
 			schedulerDB.save(schedulerNew);
@@ -58,7 +58,7 @@ public class SchedulerServiceImpl implements SchedulerService {
 		sched2.setMessage("Hai, dalam dua hari lagi pinjaman kamu sudah masuk jatuh tempo");
 		
 		SchedulerModel sched3 = new SchedulerModel();
-		sched3.setDay(2);
+		sched3.setDay(1);
 		sched3.setTime("09:00");
 		sched3.setMessage("Besok pinjaman kamu jatuh tempo, pastikan kamu sudah mempersiapkan dana pembayarannya");
 		

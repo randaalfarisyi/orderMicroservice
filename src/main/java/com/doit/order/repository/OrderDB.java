@@ -17,6 +17,7 @@ public interface OrderDB extends JpaRepository<OrderModel, Long> {
 
 	List<OrderModel> findByUuidBorrower(String uuidBorrower);
 
-	
+	List<OrderModel> findByUuidBorrowerAndDisabled(String uuidBorrower, int disabled);
+
 }
 

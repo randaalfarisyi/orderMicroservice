@@ -4,19 +4,26 @@ import java.util.List;
 
 import java.util.Optional;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.time.temporal.ChronoUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.doit.order.model.GroupOrderModel;
 import com.doit.order.model.OrderModel;
-import com.doit.order.repository.GroupOrderDB;
+import com.doit.order.model.ProductCategoryModel;
+import com.doit.order.model.ProductTypeModel;
 import com.doit.order.repository.OrderDB;
+import com.doit.order.repository.ProductCategoryDB;
+import com.doit.order.repository.ProductTypeDB;
 import com.doit.order.response.BorrowerListResponse;
 import com.doit.order.response.BorrowerResponse;
 import com.doit.order.response.OrderBorrower;
@@ -36,7 +43,13 @@ public class OrderServiceImpl implements OrderService {
 	private OrderDB orderDB;
 	
 	@Autowired
-	private GroupOrderDB groupOrderDB;
+	private ProductTypeDB productTypeDB;
+	
+	@Autowired
+	private ProductCategoryDB productCategoryDB;
+	
+//	@Autowired
+//	private GroupOrderDB groupOrderDB;
 	
 	@Autowired
 	private WebService webService;
@@ -255,7 +268,6 @@ public class OrderServiceImpl implements OrderService {
 				int termInstallment = 0;
 				for (int j=0; j < listOrderModel.size(); j++){
 					type = listOrderModel.get(j).getProductType().getName();
-					termInstallment = listOrderModel.get(j).getGroupOrder().getInstallmentTerm();
 					if (type.equalsIgnoreCase("Normal Loan")) {
 						count += 1;
 					}else if (type.equalsIgnoreCase("Installment Loan")) {
@@ -392,7 +404,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public List<OrderModel> getOrderDetailByUuidBorrower(String uuidBorrower) {
 		// TODO Auto-generated method stub
-		List<OrderModel> orderModel = orderDB.findByUuidBorrower(uuidBorrower);
+		List<OrderModel> orderModel = orderDB.findByUuidBorrowerAndDisabled(uuidBorrower, 0);
 		return orderModel;
 	}
 
@@ -409,8 +421,136 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public OrderModel submitOrder(String borrowerUuid, String productTypeUuid, String productCategoryUuid) {
-		return null;
+	public List<OrderModel> submitOrder(String borrowerUuid, String productTypeUuid, String productCategoryUuid) throws ParseException {
+		ProductTypeModel productType = productTypeDB.findByUuid(productTypeUuid).get();
+		ProductCategoryModel productCategory = productCategoryDB.findByUuid(productCategoryUuid).get();
+		
+		LocalDateTime now = LocalDateTime.now();
+		Date date = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+		
+		List<OrderModel> listOfOrder = new ArrayList<>();
+		
+		// Cek productTypenya Normal or Installment
+		if(productType.getName().equalsIgnoreCase("Normal Loan")) {
+			//GroupOrderModel groupOrder = groupOrderDB.findByName("Normal Loan").get();
+			
+			OrderModel newOrder = new OrderModel();
+			
+			newOrder.setRepayAmount(productType.getAmountApply());
+			newOrder.setAmountApply(productType.getAmountApply());
+			newOrder.setAmountDisbursed(productType.getAmountDisbursed());
+			newOrder.setInstallment(productType.getInstallment());
+			newOrder.setBorrowingTerm(productType.getBorrowingTerm());
+			newOrder.setTenor(productType.getTenor());
+			newOrder.setServiceFeeRate(productType.getServiceFeeRate());
+			newOrder.setInterestRate(productType.getInterestRate());
+			newOrder.setOverdueRate(productType.getOverdueRate());
+			newOrder.setPenaltyRate(productType.getPenaltyRate());
+			newOrder.setTargetNpl(productType.getTargetNpl());
+			newOrder.setStatus("USER_DATA_SUBMITTED");
+			
+			newOrder.setCreatedTime(date);
+			newOrder.setUpdatedTime(date);
+			newOrder.setDisabled(0);
+			
+			newOrder.setProductType(productType);
+			newOrder.setProductCategory(productCategory);
+			//newOrder.setGroupOrder(groupOrder);
+			newOrder.setUuidBorrower(borrowerUuid);
+			
+			String stringDate = "01/01/2000";
+			Date setDate = new SimpleDateFormat("dd/MM/yyyy").parse(stringDate);
+			
+			newOrder.setLendingDate(setDate);
+			newOrder.setDueDate(setDate);
+			newOrder.setRepaymentDate(setDate);
+			
+			OrderModel order = orderDB.save(newOrder);
+			listOfOrder.add(order);
+			
+		} else if (productType.getName().equalsIgnoreCase("Installment Loan")) {
+//			GroupOrderModel newGroupOrder = new GroupOrderModel();
+//			
+//			newGroupOrder.setName("Installment Loan");
+//			newGroupOrder.setInstallmentTerm(productType.getBorrowingTerm());
+//			newGroupOrder.setInstallmentTenor(productType.getTenor());
+//			newGroupOrder.setGroupOrder(new ArrayList<>());
+//			newGroupOrder.setCreatedTime(date);
+//			newGroupOrder.setUpdatedTime(date);
+//			newGroupOrder.setDisabled(0);
+//			
+//			GroupOrderModel groupOrder = groupOrderDB.save(newGroupOrder);
+			
+			int tenorPerOrder = productType.getTenor()/productType.getBorrowingTerm();
+			long sumInterestAndServiceFee = (productType.getAmountApply() - productType.getAmountDisbursed()) / productType.getBorrowingTerm();
+			
+			long amountApplyPerTerm = productType.getInstallment() * productType.getBorrowingTerm();
+			
+			// Amount Apply, Borrowing Term, dan RepayAmount dikurangi installment
+			for (int term = 1; term < productType.getBorrowingTerm()+1; term++) {
+				OrderModel newOrder = new OrderModel();
+				
+				newOrder.setRepayAmount(amountApplyPerTerm);
+				newOrder.setAmountApply(amountApplyPerTerm);
+				newOrder.setAmountDisbursed(amountApplyPerTerm - sumInterestAndServiceFee);
+				newOrder.setInstallment(productType.getInstallment());
+				newOrder.setBorrowingTerm(term);
+				newOrder.setTenor(tenorPerOrder);
+				newOrder.setServiceFeeRate(productType.getServiceFeeRate());
+				newOrder.setInterestRate(productType.getInterestRate());
+				newOrder.setOverdueRate(productType.getOverdueRate());
+				newOrder.setPenaltyRate(productType.getPenaltyRate());
+				newOrder.setTargetNpl(productType.getTargetNpl());
+				newOrder.setStatus("USER_DATA_SUBMITTED");
+				
+				newOrder.setCreatedTime(date);
+				newOrder.setUpdatedTime(date);
+				newOrder.setDisabled(0);
+				
+				newOrder.setProductType(productType);
+				newOrder.setProductCategory(productCategory);
+				//newOrder.setGroupOrder(groupOrder);
+				newOrder.setUuidBorrower(borrowerUuid);
+				
+				String stringDate = "01/01/2000";
+				Date setDate = new SimpleDateFormat("dd/MM/yyyy").parse(stringDate);
+				
+				newOrder.setLendingDate(setDate);
+				newOrder.setDueDate(setDate);
+				newOrder.setRepaymentDate(setDate);
+				
+				OrderModel order = orderDB.save(newOrder);
+				listOfOrder.add(order);
+				amountApplyPerTerm -= productType.getInstallment();
+			}
+		}
+		
+		return listOfOrder;
+	}
+	
+	@Override
+	public long countRepaymentAmount(OrderModel order) {
+		// cek keterlambatan
+		LocalDateTime now = LocalDateTime.now();
+		Date dateNow = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+		Date dueDate = order.getDueDate();
+		
+		LocalDate dateNowLocal = dateNow.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		LocalDate dueDateLocal = dueDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		
+		long noOfDaysBetween = ChronoUnit.DAYS.between(dueDateLocal, dateNowLocal);
+		
+		if (noOfDaysBetween < 1) {
+			// if tidak telat, Repay Amount = Amount Apply
+			return order.getAmountApply();
+		} else {
+			// if telah bayar, Repay Amount = Amount Apply + Overdue Fee + Penalty Fee
+			double penaltyFeePerDay = order.getPenaltyRate() * order.getAmountApply();
+			long penaltyRate = (long) (penaltyFeePerDay * noOfDaysBetween);
+			
+			long repayAmount = order.getAmountApply() + order.getOverdueRate() + penaltyRate;
+			return repayAmount;
+		}
 	}
 
 }

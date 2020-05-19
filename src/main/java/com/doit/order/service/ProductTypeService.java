@@ -2,6 +2,7 @@ package com.doit.order.service;
 
 import java.util.Date;
 
+
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public interface ProductTypeService {
 
 	ProductTypeModel addProductType(ProductTypeModel productType);
 	
-	Optional<ProductTypeModel> getProductTypeByNameAndAmount(String name, Long borrowingAmount);
+	Optional<ProductTypeModel> getProductTypeByNameAndAmount(String name, Long amountApply);
 
 	ProductTypeModel changeProduct(ProductTypeModel productUpdated);
 	

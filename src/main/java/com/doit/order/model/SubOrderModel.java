@@ -1,13 +1,9 @@
 package com.doit.order.model;
-import java.io.Serializable;
+
 import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
-
-import java.io.Serializable;
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,8 +23,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "orderTable")
-public class OrderModel implements Serializable{
+@Table(name = "subOrder")
+public class SubOrderModel {
 	@Column(name = "id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -38,24 +34,19 @@ public class OrderModel implements Serializable{
 	@GenericGenerator(name = "system-uuid", strategy = "uuid")
 	private String uuid;
 	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "uuidOrder", referencedColumnName = "uuid", nullable = false)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	@JsonIgnore
+	private OrderModel order;
+	
 	@NotNull
-	@Column(name = "uuidBorrower", nullable = false)
-	private String uuidBorrower;
+	@Column(name = "installmentTerm", nullable = false)
+	private int installmentTerm;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "uuidProductType", referencedColumnName = "uuid", nullable = false)
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	@JsonIgnore
-	private ProductTypeModel productType;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "uuidProductCategory", referencedColumnName = "uuid", nullable = false)
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	@JsonIgnore
-	private ProductCategoryModel productCategory;
-	
-	@OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private List<SubOrderModel> subOrderList;
+	@NotNull
+	@Column(name = "installmentTenor", nullable = false)
+	private int installmentTenor;
 	
 	@NotNull
 	@Column(name = "repayAmount", nullable = false)
@@ -80,38 +71,6 @@ public class OrderModel implements Serializable{
 	@NotNull
 	@Column(name = "amountDisbursed", nullable = false)
 	private long amountDisbursed;
-	
-	@NotNull
-	@Column(name = "installment", nullable = false)
-	private long installment;
-	
-	@NotNull
-	@Column(name = "borrowingTerm", nullable = false)
-	private int borrowingTerm;
-	
-	@NotNull
-	@Column(name = "tenor", nullable = false)
-	private int tenor;
-	
-	@NotNull
-	@Column(name = "serviceFeeRate", nullable = false)
-	private double serviceFeeRate;
-	
-	@NotNull
-	@Column(name = "interestRate", nullable = false)
-	private double interestRate;
-	
-	@NotNull
-	@Column(name = "overdueRate", nullable = false)
-	private long overdueRate;
-	
-	@NotNull
-	@Column(name = "penaltyRate", nullable = false)
-	private double penaltyRate;
-	
-	@NotNull
-	@Column(name = "targetNpl", nullable = false)
-	private double targetNpl;
 	
 	@NotNull
 	@Column(name = "status", nullable = false)
@@ -145,36 +104,28 @@ public class OrderModel implements Serializable{
 		this.uuid = uuid;
 	}
 
-	public String getUuidBorrower() {
-		return uuidBorrower;
+	public OrderModel getOrder() {
+		return order;
 	}
 
-	public void setUuidBorrower(String uuidBorrower) {
-		this.uuidBorrower = uuidBorrower;
+	public void setOrder(OrderModel order) {
+		this.order = order;
 	}
 
-	public ProductTypeModel getProductType() {
-		return productType;
+	public int getInstallmentTerm() {
+		return installmentTerm;
 	}
 
-	public void setProductType(ProductTypeModel productType) {
-		this.productType = productType;
+	public void setInstallmentTerm(int installmentTerm) {
+		this.installmentTerm = installmentTerm;
 	}
 
-	public ProductCategoryModel getProductCategory() {
-		return productCategory;
+	public int getInstallmentTenor() {
+		return installmentTenor;
 	}
 
-	public void setProductCategory(ProductCategoryModel productCategory) {
-		this.productCategory = productCategory;
-	}
-	
-	public List<SubOrderModel> getSubOrderList() {
-		return subOrderList;
-	}
-
-	public void setSubOrderList(List<SubOrderModel> subOrderList) {
-		this.subOrderList = subOrderList;
+	public void setInstallmentTenor(int installmentTenor) {
+		this.installmentTenor = installmentTenor;
 	}
 
 	public long getRepayAmount() {
@@ -223,70 +174,6 @@ public class OrderModel implements Serializable{
 
 	public void setAmountDisbursed(long amountDisbursed) {
 		this.amountDisbursed = amountDisbursed;
-	}
-
-	public long getInstallment() {
-		return installment;
-	}
-
-	public void setInstallment(long installment) {
-		this.installment = installment;
-	}
-
-	public int getBorrowingTerm() {
-		return borrowingTerm;
-	}
-
-	public void setBorrowingTerm(int borrowingTerm) {
-		this.borrowingTerm = borrowingTerm;
-	}
-
-	public int getTenor() {
-		return tenor;
-	}
-
-	public void setTenor(int tenor) {
-		this.tenor = tenor;
-	}
-
-	public double getServiceFeeRate() {
-		return serviceFeeRate;
-	}
-
-	public void setServiceFeeRate(double serviceFeeRate) {
-		this.serviceFeeRate = serviceFeeRate;
-	}
-
-	public double getInterestRate() {
-		return interestRate;
-	}
-
-	public void setInterestRate(double interestRate) {
-		this.interestRate = interestRate;
-	}
-
-	public long getOverdueRate() {
-		return overdueRate;
-	}
-
-	public void setOverdueRate(long overdueRate) {
-		this.overdueRate = overdueRate;
-	}
-
-	public double getPenaltyRate() {
-		return penaltyRate;
-	}
-
-	public void setPenaltyRate(double penaltyRate) {
-		this.penaltyRate = penaltyRate;
-	}
-
-	public double getTargetNpl() {
-		return targetNpl;
-	}
-
-	public void setTargetNpl(double targetNpl) {
-		this.targetNpl = targetNpl;
 	}
 
 	public String getStatus() {

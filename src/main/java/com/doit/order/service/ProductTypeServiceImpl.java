@@ -56,8 +56,8 @@ public class ProductTypeServiceImpl implements ProductTypeService {
 	}
 
 	@Override
-	public Optional<ProductTypeModel> getProductTypeByNameAndAmount(String name, Long borrowingAmount) {
-		return productTypeDB.findByNameAndAmountApply(name, borrowingAmount);
+	public Optional<ProductTypeModel> getProductTypeByNameAndAmount(String name, Long amountApply) {
+		return productTypeDB.findByNameAndAmountApply(name, amountApply);
 	}
 
 	@Override
